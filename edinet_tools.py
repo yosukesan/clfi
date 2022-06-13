@@ -2,16 +2,31 @@
 
 from collections import defaultdict
 from datetime import datetime, timedelta
+
 import json
-import urllib.request
+import logging
 import os
+<<<<<<< HEAD
+import urllib.request
+
+class Types:
+
+    def rdict(self):
+        return defaultdict(self.rdict)
+
+=======
 import time
+>>>>>>> 1f3d9ab799a92c7a1c94ee7a323cb002bb133897
 
-class Edinet:
+class EdinetTool:
 
+<<<<<<< HEAD
+    def __init__(self):
+=======
     def __init__(self, url):
         self.delay = 1
         self._url = url
+>>>>>>> 1f3d9ab799a92c7a1c94ee7a323cb002bb133897
         self._doc_type_codes = {"010": "有価証券通知書",
                                 "020": "変更通知書(有価証券通知書)",
                                 "030": "有価証券届出書",
@@ -23,6 +38,56 @@ class Edinet:
                                 "150": "訂正四半期報告書",
                                 "150": "半期報告書",
                                 "170": "訂正半期報告書"}
+        self.error_code = ["Cache file doesn't exit. Run `python edinet_tool --update`",\
+                           "Cache file dir doesn't exit. Run `python edinet_tool --update`"]
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    @base_url.setter
+    def base_url(self, url):
+        self._base_url = url
+
+    @property
+    def cache_dir_path(self):
+        return self._cache_dir_path
+
+    @cache_dir_path.setter
+    def cache_dir_path(self, cache_dir_path):
+        self._cache_dir_path = cache_dir_path
+
+    @property
+    def cache_file_path(self):
+        return self._cache_file_path
+
+    @cache_file_path.setter
+    def cache_file_path(self, cache_file_path):
+        self._cache_file_path = cache_file_path
+
+    @property
+    def json_dir_path(self):
+        return self._json_dir_path
+
+    @json_dir_path.setter
+    def json_dir_path(self, json_dir_path):
+        self._json_dir_path
+
+    @property
+    def xbrl_dir_root(self):
+        return self._xbrl_dir_root
+
+    @xbrl_dir_root.setter
+    def xbrl_dir_root(self, xbrl_dir_root):
+        self._xbrl_dir_root = xbrl_dir_root
+
+    @property
+    def edinet_meta_data(self):
+        return self._meta_data
+
+    @edinet_meta_data.setter
+    def metadata(self, meta_data):
+        self._meta_data = meta_data
 
         self._data_dir = ''
 
@@ -72,7 +137,8 @@ class Edinet:
     def metadata_get(self, start, end)->dict:
     #" download document.json file from Edinet "
 
-        hashmap = {}
+        types = Types()
+        hashmap = types.rdict()
 
         for d in range((end-start).days+1): 
 
@@ -80,23 +146,31 @@ class Edinet:
             str_day = str(day).split(' ')[0]
 
             url_date="date=" + str_day
-            url = self._url + "/documents.json?" + url_date +"&type=2"
+            url = self.base_url + "/documents.json?" + url_date +"&type=2"
 
             metadata_json = urllib.request.urlopen(url)
 
             json_data = json.loads(metadata_json.read().decode())
 
             for i in json_data["results"]:
+
                 if not i["docTypeCode"] in self._doc_type_codes.keys():
                     continue
 
                 doc_type = self._doc_type_codes[i["docTypeCode"]]
+<<<<<<< HEAD
+
+                key = i["filerName"]
+                doc_id = i["docID"]
+                hashmap[key][doc_type][str_day] = i
+=======
                 key = i["filerName"]
                 doc_id = i["docID"]
                 hashmap[key] = i
                 #print('name={0}, docID={1}, formCode={2}'.format(key, doc_id, i['formCode']))
 
             time.sleep(self.delay)
+>>>>>>> 1f3d9ab799a92c7a1c94ee7a323cb002bb133897
 
         return hashmap
 
@@ -128,16 +202,108 @@ class Edinet:
                 print('\t{0}'.format(xbrl_file))
             print('')
 
+<<<<<<< HEAD
+    def xbrl_get2(self, xbrl_dir_root, hashmap):
+
+        for firms in hashmap.keys():
+            for doc_types in hashmap[firms]:
+                for days in hashmap[firms][doc_types]:
+                    hashed = hashmap[firms][doc_types][days]
+                    doc_id = hashed['docID']
+
+                    url = '{0}/documents/{1}?type=1'\
+                        .format(self.base_url, doc_id)
+                    xbrl_data = urllib.request.urlopen(url)
+
+                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
+                    os.makedirs(pwd, exist_ok=True)
+
+                    target_path = os.path.join(pwd, hashed['docID']+".zip")
+                    open(target_path, "wb").write(xbrl_data.read())
+
+                    self._unzip(target_path)
+
+
+def yaxbrl_update(edinet, tart, end):
+
+    new_data = edinet.metadata_get(start, end)
+    previous_data = None
+
+    if not os.path.isdir(edinet.cache_dir_path):
+        os.makedirs(edinet.cache_dir_path)
+    else:
+        if os.path.isfile(edinet.cache_file_path):
+            rfile = open(edinet.cache_file_path, 'r')
+            previous_data = json.load(rfile)
+            rfile.close()
+            new_data = dict(new_data) | previous_data
+
+    wfile = open(edinet.cache_file_path, 'w')
+    json.dump(new_data, wfile)
+    wfile.close()
+
+def yaxbrl_get(edinet, start, end):
+
+    cache_data = None
+
+    if not os.path.isfile(edinet.cache_file_path):
+        logging.error('@{0}: Error number = {1}\n\t{2}' \
+            .format(yaxbrl_get.__name__, 0, edinet.error_code[0]))
+        sys.exit(1)
+
+    rfile = open(edinet.cache_file_path, 'r')
+    cache_data = json.load(rfile)
+    rfile.close()
+
+    if not os.path.isdir(edinet.xbrl_dir_root):
+        os.makedirs(edinet.xbrl_dir_root, exist_ok=True)
+
+    edinet.xbrl_get2(edinet.xbrl_dir_root, cache_data)
+
+=======
             time.sleep(self.delay)
+>>>>>>> 1f3d9ab799a92c7a1c94ee7a323cb002bb133897
 
 if __name__=="__main__":
+    import sys
+    import argparse
+
+    cmd_parser = argparse.ArgumentParser(description='Edinet tool')
+    cmd_parser.add_argument('--update', action="store_true")
+    cmd_parser.add_argument('--get', action="store_true")
+    cmd_parser.add_argument('--clean', action="store_true")
+    args = cmd_parser.parse_args()
+
+    edinet = EdinetTool()
+
+    edinet.xbrl_dir_root = 'XBRL_files'
+    home_dir = os.path.expanduser('~')
+    edinet.cache_dir_path = os.path.join(home_dir, '.cache', 'yaxbrl')
+    edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
+    edinet.base_url = "https://disclosure.edinet-fsa.go.jp/api/v1"
 
     start: datetime = datetime(2021, 10, 10)
     end: datetime = datetime(2021, 10, 13)
 
+<<<<<<< HEAD
+    if args.update:
+        print("fetching Edinet server")
+        yaxbrl_update(edinet, start, end)
+        sys.exit(0)
+
+    if args.get:
+        print("reading cached data")
+        yaxbrl_get(edinet, start, end)
+        sys.exit(0)
+
+    #target_firm = "株式会社インターファクトリー"
+    #target_firms = metadata_json[target_firm]
+    #target_files = target_firms["四半期報告書"]
+=======
     url = "https://disclosure.edinet-fsa.go.jp/api/v1"
     edinet = Edinet(url)
     edinet.data_dir("XBRL_files")
     metadata_json = edinet.metadata_get(start, end)
 
     edinet.xbrl_get(metadata_json)
+>>>>>>> 1f3d9ab799a92c7a1c94ee7a323cb002bb133897
