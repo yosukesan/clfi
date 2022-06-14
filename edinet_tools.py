@@ -182,6 +182,7 @@ class EdinetTool:
                 print('\t{0}'.format(xbrl_file))
             print('')
 
+
     def xbrl_get2(self, xbrl_dir_root, hashmap):
 
         for firms in hashmap.keys():
