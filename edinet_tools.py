@@ -266,10 +266,10 @@ if __name__=="__main__":
     import argparse
 
     cmd_parser = argparse.ArgumentParser(description='Edinet tool')
-    cmd_parser.add_argument('--update', description='update cache data')
-    cmd_parser.add_argument('--all', description='download all avalible data')
-    cmd_parser.add_argument('--target', metavar='${target_firm}', type=str, nargs=1, description='get target_firms data')
-    cmd_parser.add_argument('--clean', description='clean local cache ~/.cache/yaxbrl/edinet_cache.json')
+    cmd_parser.add_argument('--update', help='update cache data')
+    cmd_parser.add_argument('--all', help='download all avalible data')
+    cmd_parser.add_argument('--target', metavar='${target_firm}', type=str, nargs=1, help='get target_firms data')
+    cmd_parser.add_argument('--clean', help='clean local cache ~/.cache/yaxbrl/edinet_cache.json')
 
     args = cmd_parser.parse_args()
 
