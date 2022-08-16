@@ -10,8 +10,14 @@ A fetching tool for Edinet.
 python3 edinet_tools.py --update
 ```
 
-2. Get XBRL data from Edinet server. Data is stored at ./XBRL\_files
+2. Get all XBRL data from Edinet server. Data is stored at ./XBRL
 
 ```
-python3 edinet_tools.py --get
+python3 edinet_tools.py --all
+```
+
+3. Get target firm data
+
+```
+python3 edinet_tools.py --target トヨタ自動車株式会社
 ```
