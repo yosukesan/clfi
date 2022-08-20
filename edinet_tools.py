@@ -63,7 +63,7 @@ if __name__=="__main__":
 
     edinet = EdinetTool()
 
-    edinet.xbrl_dir_root = 'XBRL_files'
+    edinet.xbrl_dir_root = 'XBRL_raw'
     home_dir = os.path.expanduser('~')
     edinet.cache_dir_path = os.path.join(home_dir, '.cache', 'yaxbrl')
     edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
