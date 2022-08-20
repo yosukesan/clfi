@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
-import os, json
-from collections import defaultdict
-from datetime import datetime, timedelta
+import os, json, logging
+from datetime import datetime
 from edinet import EdinetTool
 
 def yaxbrl_read_cache_data(file_path):

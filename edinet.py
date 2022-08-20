@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import json
-import logging
 import os
 import urllib.request
 
