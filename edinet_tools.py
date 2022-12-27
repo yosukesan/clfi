@@ -2,6 +2,7 @@
 
 import os, json, logging
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from edinet import EdinetTool
 
 def yaxbrl_read_cache_data(file_path):
@@ -68,8 +69,8 @@ if __name__=="__main__":
     edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
     edinet.base_url = "https://disclosure.edinet-fsa.go.jp/api/v1"
 
-    start: datetime = datetime(2017, 8, 16)
-    end: datetime = datetime(2022, 8, 15)
+    start: datetime = datetime.today()
+    end: datetime = start - relativedelta(years=3)
 
     if args.update:
         print("fetching Edinet server")
