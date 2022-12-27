@@ -91,7 +91,6 @@ class EdinetTool:
 
         return xbrl_file_path
 
-
     def _unzip(self, target_path)->None:
         import zipfile
 
