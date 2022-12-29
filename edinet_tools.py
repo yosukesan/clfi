@@ -24,15 +24,18 @@ def yaxbrl_update(edinet, tart, end):
     previous_data = None
 
     if not os.path.isdir(edinet.cache_dir_path):
+        print('making local cache dir : ', edinet.cache_dir_path)
         os.makedirs(edinet.cache_dir_path)
     else:
         if os.path.isfile(edinet.cache_file_path):
+            print('reading local cache file : ', edinet.cache_file_path)
             rfile = open(edinet.cache_file_path, 'r')
             previous_data = json.load(rfile)
             rfile.close()
             new_data = dict(new_data) | previous_data
 
     wfile = open(edinet.cache_file_path, 'w')
+    print('Downloading meta json file')
     json.dump(new_data, wfile)
     wfile.close()
 
@@ -70,8 +73,16 @@ if __name__=="__main__":
     edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
     edinet.base_url = "https://disclosure.edinet-fsa.go.jp/api/v1"
 
+    #excel_file = 'data_j.xls'
+    #tickers = edinet.batch_download(excel_file)
+    #print(tickers)
+
     start: datetime = datetime.today()
     end: datetime = start - relativedelta(years=3)
+    start = start.date()
+    end = end.date()
+
+    print('query ragen over: ', start, end)
 
     if args.update:
         print("fetching Edinet server")
@@ -79,14 +90,14 @@ if __name__=="__main__":
         sys.exit(0)
 
     if args.target:
-        print("fetching Edinet server")
+        print("downloading target xbrl files")
 
         # only support single frim for this option
         yaxbrl_query_get(edinet, start, end, firm=args.target[0], is_exclude_fund=True)
         sys.exit(0)
 
     if args.all:
-        print("reading cached data")
+        print("downloading all xbrl files")
         yaxbrl_get(edinet, start, end, is_exclude_fund=True)
         sys.exit(0)
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
-from datetime import timedelta, datetime
+from datetime import datetime
 
 import json
 import os
 import urllib.request
+import pandas as pd
 
 class Types:
 
@@ -140,12 +141,9 @@ class EdinetTool:
         types = Types()
         hashmap = types.rdict()
 
-        for d in range((end-start).days+1): 
+        for d in pd.date_range(start=end, end=start): 
 
-            day = start + timedelta(d)
-            str_day = str(day).split(' ')[0]
-
-            url_date="date=" + str_day
+            url_date="date=" + d.strftime('%Y-%m-%d')
             url = self.base_url + "/documents.json?" + url_date +"&type=2"
 
             metadata_json = urllib.request.urlopen(url)
@@ -161,7 +159,7 @@ class EdinetTool:
 
                 key = i["filerName"]
 
-                hashmap[key][str_day][doc_type] = i
+                hashmap[key][d.strftime('%Y-%m-%d')][doc_type] = i
 
         return hashmap
 
@@ -223,7 +221,16 @@ class EdinetTool:
         for firm in hashmap:
             new_hash[firm] = {}
             for dates in hashmap[firm]:
-                if datetime.strptime(dates, '%Y-%m-%d') >= end:
+                if datetime.strptime(dates, '%Y-%m-%d').date() >= end:
                     new_hash[firm][dates] = hashmap[firm][dates]
 
         return new_hash
+
+    def batch_download(self, excel_file) -> dict:
+        
+        df = pd.read_excel(excel_file)
+        df = df[df['市場・商品区分'] != 'ETF・ETN']
+        df = df[['コード', '銘柄名', '33業種コード', '33業種区分', '17業種コード', '17業種区分', '規模コード', '規模区分']]
+
+        return df
+
