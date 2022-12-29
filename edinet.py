@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import json
 import os
@@ -215,3 +215,15 @@ class EdinetTool:
                 xbrl_file_path = self._unzip(target_path)
 
                 print('{0},{1},{2},{3},{4}'.format(firm, dates, doc_id, xbrl_file_path, target_path))
+
+    def xbrl_filter_by_dates(self, hashmap, start, end):
+
+        new_hash = {}
+
+        for firm in hashmap:
+            new_hash[firm] = {}
+            for dates in hashmap[firm]:
+                if datetime.strptime(dates, '%Y-%m-%d') >= end:
+                    new_hash[firm][dates] = hashmap[firm][dates]
+
+        return new_hash

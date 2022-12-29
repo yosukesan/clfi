@@ -47,6 +47,7 @@ def yaxbrl_get(edinet, start, end, is_exclude_fund):
 def yaxbrl_query_get(edinet, start, end, firm, is_exclude_fund):
 
     cache_data = yaxbrl_read_cache_data(edinet.cache_file_path)
+    cache_data = edinet.xbrl_filter_by_dates(cache_data, start, end)
     edinet.xbrl_get_by_query(edinet.xbrl_dir_root, cache_data, firm, is_exclude_fund)
 
 if __name__=="__main__":
