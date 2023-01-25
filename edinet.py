@@ -5,8 +5,9 @@ from datetime import datetime
 
 import json
 import os
-import urllib.request
+import requests
 import pandas as pd
+import time
 
 class Types:
 
@@ -138,17 +139,20 @@ class EdinetTool:
     def metadata_get(self, start, end)->dict:
     #" download document.json file from Edinet "
 
+        ses = requests.Session()
+
         types = Types()
         hashmap = types.rdict()
 
         for d in pd.date_range(start=end, end=start): 
 
             url_date="date=" + d.strftime('%Y-%m-%d')
+            print(url_date)
             url = self.base_url + "/documents.json?" + url_date +"&type=2"
 
-            metadata_json = urllib.request.urlopen(url)
-
-            json_data = json.loads(metadata_json.read().decode())
+            resp = ses.get(url)
+            resp.encoding = resp.apparent_encoding
+            json_data = json.loads(resp.text)
 
             for i in json_data["results"]:
 
@@ -160,6 +164,10 @@ class EdinetTool:
                 key = i["filerName"]
 
                 hashmap[key][d.strftime('%Y-%m-%d')][doc_type] = i
+
+                time.sleep(1)
+
+        ses.close()
 
         return hashmap
 
