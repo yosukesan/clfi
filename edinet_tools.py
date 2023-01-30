@@ -77,8 +77,8 @@ if __name__=="__main__":
     #tickers = edinet.batch_download(excel_file)
     #print(tickers)
 
-    start: datetime = datetime.today()
-    end: datetime = start - relativedelta(years=3)
+    start: datetime = datetime(2023,1,30)
+    end: datetime = datetime(2022,9,30)
     start = start.date()
     end = end.date()
 
