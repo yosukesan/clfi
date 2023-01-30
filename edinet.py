@@ -9,6 +9,8 @@ import requests
 import pandas as pd
 import time
 
+DELAY = 3
+
 class Types:
 
     def rdict(self):
@@ -165,13 +167,15 @@ class EdinetTool:
 
                 hashmap[key][d.strftime('%Y-%m-%d')][doc_type] = i
 
-                time.sleep(1)
+            time.sleep(DELAY)
 
         ses.close()
 
         return hashmap
 
     def xbrl_get2(self, xbrl_dir_root, hashmap, is_exclude_fund):
+
+        ses = requests.Session()
 
         for firms in hashmap.keys():
             for dates in hashmap[firms]:
@@ -189,19 +193,26 @@ class EdinetTool:
 
                     url = '{0}/documents/{1}?type=1'\
                         .format(self.base_url, doc_id)
-                    xbrl_data = urllib.request.urlopen(url)
+                    resp = ses.get(url)
+                    resp.encoding = resp.apparent_encoding
+                    #json_data = json.loads(resp.text)
+                    #xbrl_data = urllib.request.urlopen(url)
+
+                    time.sleep(DELAY)
 
                     pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
                     os.makedirs(pwd, exist_ok=True)
 
                     target_path = os.path.join(pwd, hashed['docID']+".zip")
-                    open(target_path, "wb").write(xbrl_data.read())
+                    open(target_path, "wb").write(resp.text)
                     xbrl_file_path = self._unzip(target_path)
 
                     print('{0},{1},{2},{3},{4},{5}'.format(firms, doc_types, dates,doc_id, xbrl_file_path, target_path))
 
 
     def xbrl_get_by_query(self, xbrl_dir_root, hashmap, firm, is_exclude_fund):
+
+        ses = requests.Session()
 
         for dates in hashmap[firm]:
             for docs in hashmap[firm][dates]:
@@ -211,13 +222,17 @@ class EdinetTool:
 
                 url = '{0}/documents/{1}?type=1'\
                     .format(self.base_url, doc_id)
-                xbrl_data = urllib.request.urlopen(url)
+                resp = ses.get(url)
+                resp.encoding = resp.apparent_encoding
+                #xbrl_data = urllib.request.urlopen(url)
+
+                time.sleep(DELAY)
 
                 pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
                 os.makedirs(pwd, exist_ok=True)
 
                 target_path = os.path.join(pwd, hashed['docID']+".zip")
-                open(target_path, "wb").write(xbrl_data.read())
+                open(target_path, "wb").write(resp.text)
                 xbrl_file_path = self._unzip(target_path)
 
                 print('{0},{1},{2},{3},{4}'.format(firm, dates, doc_id, xbrl_file_path, target_path))
