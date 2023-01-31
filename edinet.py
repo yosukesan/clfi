@@ -162,9 +162,7 @@ class EdinetTool:
                     continue
 
                 doc_type = self._doc_type_codes[i["docTypeCode"]]
-
                 key = i["filerName"]
-
                 hashmap[key][d.strftime('%Y-%m-%d')][doc_type] = i
 
             time.sleep(DELAY)
@@ -209,6 +207,7 @@ class EdinetTool:
 
                     print('{0},{1},{2},{3},{4},{5}'.format(firms, doc_types, dates,doc_id, xbrl_file_path, target_path))
 
+        ses.close()
 
     def xbrl_get_by_query(self, xbrl_dir_root, hashmap, firm, is_exclude_fund):
 
@@ -236,6 +235,8 @@ class EdinetTool:
                 xbrl_file_path = self._unzip(target_path)
 
                 print('{0},{1},{2},{3},{4}'.format(firm, dates, doc_id, xbrl_file_path, target_path))
+
+        ses.close()
 
     def xbrl_filter_by_dates(self, hashmap, start, end):
 
