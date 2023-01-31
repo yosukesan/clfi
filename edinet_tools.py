@@ -5,54 +5,6 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from edinet import EdinetTool
 
-def yaxbrl_read_cache_data(file_path):
-
-    if not os.path.isfile(file_path):
-        logging.error('@{0}: Error number = {1}\n\t{2}' \
-            .format(yaxbrl_get.__name__, 0, edinet.error_code[0]))
-        sys.exit(1)
-
-    rfile = open(edinet.cache_file_path, 'r')
-    cache_data = json.load(rfile)
-    rfile.close()
-
-    return cache_data
-
-def yaxbrl_update(edinet, tart, end):
-
-    new_data = edinet.metadata_get(start, end)
-    previous_data = None
-
-    if not os.path.isdir(edinet.cache_dir_path):
-        print('making local cache dir : ', edinet.cache_dir_path)
-        os.makedirs(edinet.cache_dir_path)
-    else:
-        if os.path.isfile(edinet.cache_file_path):
-            print('reading local cache file : ', edinet.cache_file_path)
-            rfile = open(edinet.cache_file_path, 'r')
-            previous_data = json.load(rfile)
-            rfile.close()
-            new_data = dict(new_data) | previous_data
-
-    wfile = open(edinet.cache_file_path, 'w')
-    print('Downloading meta json file')
-    json.dump(new_data, wfile)
-    wfile.close()
-
-def yaxbrl_get(edinet, start, end, is_exclude_fund):
-
-    if not os.path.isdir(edinet.xbrl_dir_root):
-        os.makedirs(edinet.xbrl_dir_root, exist_ok=True)
-
-    cache_data = yaxbrl_read_cache_data(edinet.cache_file_path)
-    edinet.xbrl_get2(edinet.xbrl_dir_root, cache_data, is_exclude_fund)
-
-def yaxbrl_query_get(edinet, start, end, firm, is_exclude_fund):
-
-    cache_data = yaxbrl_read_cache_data(edinet.cache_file_path)
-    cache_data = edinet.xbrl_filter_by_dates(cache_data, start, end)
-    edinet.xbrl_get_by_query(edinet.xbrl_dir_root, cache_data, firm, is_exclude_fund)
-
 if __name__=="__main__":
     import sys
     import argparse
@@ -73,10 +25,6 @@ if __name__=="__main__":
     edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
     edinet.base_url = "https://disclosure.edinet-fsa.go.jp/api/v1"
 
-    #excel_file = 'data_j.xls'
-    #tickers = edinet.batch_download(excel_file)
-    #print(tickers)
-
     start: datetime = datetime(2023,1,30)
     end: datetime = datetime(2022,9,30)
     start = start.date()
@@ -86,18 +34,21 @@ if __name__=="__main__":
 
     if args.update:
         print("fetching Edinet server")
-        yaxbrl_update(edinet, start, end)
+        edinet.yaxbrl_update(start, end)
         sys.exit(0)
 
     if args.target:
         print("downloading target xbrl files")
 
         # only support single frim for this option
-        yaxbrl_query_get(edinet, start, end, firm=args.target[0], is_exclude_fund=True)
+        edinet.yaxbrl_query_get(start, end, firm=args.target[0], is_exclude_fund=True)
         sys.exit(0)
 
     if args.all:
         print("downloading all xbrl files")
-        yaxbrl_get(edinet, start, end, is_exclude_fund=True)
-        sys.exit(0)
 
+        targets = edinet.jpx_and_edinet_ticker_match()
+        edinet.yaxbrl_query_get(start, end, targets, is_exclude_fund=True)
+
+        #edinet.yaxbrl_get(start, end, is_exclude_fund=True)
+        sys.exit(0)

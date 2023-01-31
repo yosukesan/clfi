@@ -8,6 +8,7 @@ import os
 import requests
 import pandas as pd
 import time
+import unicodedata as ud
 
 DELAY = 3
 
@@ -209,32 +210,46 @@ class EdinetTool:
 
         ses.close()
 
-    def xbrl_get_by_query(self, xbrl_dir_root, hashmap, firm, is_exclude_fund):
+    def xbrl_get_by_query(self, xbrl_dir_root, hashmap, targets, is_exclude_fund):
 
         ses = requests.Session()
 
-        for dates in hashmap[firm]:
-            for docs in hashmap[firm][dates]:
-                hashed = hashmap[firm][dates][docs]
+        firms = []
+        if isinstance(targets, str):
+            # need to make tuple. First element is dummy.
+            firms.append(('dummy_element', targets))
 
-                doc_id = hashed['docID']
+        if isinstance(targets, list):
+            firms = targets
 
-                url = '{0}/documents/{1}?type=1'\
-                    .format(self.base_url, doc_id)
-                resp = ses.get(url)
-                resp.encoding = resp.apparent_encoding
-                #xbrl_data = urllib.request.urlopen(url)
+        for item in firms:
+            if len(item) == 1:
+                Warning('Unmatched JPX ticker to Edinet data. Skipping.')
+                continue
+            firm = item[1] 
+            print('{0},,,,'.format(firm))
+            for dates in hashmap[firm]:
+                for docs in hashmap[firm][dates]:
+                    hashed = hashmap[firm][dates][docs]
 
-                time.sleep(DELAY)
+                    doc_id = hashed['docID']
 
-                pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
-                os.makedirs(pwd, exist_ok=True)
+                    url = '{0}/documents/{1}?type=1'\
+                        .format(self.base_url, doc_id)
+                    resp = ses.get(url)
+                    resp.encoding = resp.apparent_encoding
+                    #xbrl_data = urllib.request.urlopen(url)
 
-                target_path = os.path.join(pwd, hashed['docID']+".zip")
-                open(target_path, "wb").write(resp.text)
-                xbrl_file_path = self._unzip(target_path)
+                    time.sleep(DELAY)
 
-                print('{0},{1},{2},{3},{4}'.format(firm, dates, doc_id, xbrl_file_path, target_path))
+                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
+                    os.makedirs(pwd, exist_ok=True)
+
+                    target_path = os.path.join(pwd, hashed['docID']+".zip")
+                    open(target_path, "wb").write(resp.content)
+                    xbrl_file_path = self._unzip(target_path)
+
+                    print('{0},{1},{2},{3},{4}'.format(firm, dates, doc_id, xbrl_file_path, target_path))
 
         ses.close()
 
@@ -258,3 +273,74 @@ class EdinetTool:
 
         return df
 
+    def yaxbrl_get(self, start, end, is_exclude_fund):
+    
+        if not os.path.isdir(self.xbrl_dir_root):
+            os.makedirs(self.xbrl_dir_root, exist_ok=True)
+    
+        cache_data = self.yaxbrl_read_cache_data(self.cache_file_path)
+        self.xbrl_get2(self.xbrl_dir_root, cache_data, is_exclude_fund)
+    
+    def yaxbrl_query_get(self, start, end, firm, is_exclude_fund):
+    
+        cache_data = self.yaxbrl_read_cache_data(self.cache_file_path)
+        cache_data = self.xbrl_filter_by_dates(cache_data, start, end)
+        self.xbrl_get_by_query(self.xbrl_dir_root, cache_data, firm, is_exclude_fund)
+
+    def yaxbrl_read_cache_data(self, file_path):
+    
+        if not os.path.isfile(file_path):
+            logging.error('@{0}: Error number = {1}\n\t{2}' \
+                .format(yaxbrl_get.__name__, 0, self.error_code[0]))
+            sys.exit(1)
+    
+        rfile = open(self.cache_file_path, 'r')
+        cache_data = json.load(rfile)
+        rfile.close()
+    
+        return cache_data
+    
+    def yaxbrl_update(self, start, end):
+    
+        new_data = self.metadata_get(start, end)
+        previous_data = None
+    
+        if not os.path.isdir(self.cache_dir_path):
+            print('making local cache dir : ', self.cache_dir_path)
+            os.makedirs(self.cache_dir_path)
+        else:
+            if os.path.isfile(self.cache_file_path):
+                print('reading local cache file : ', self.cache_file_path)
+                rfile = open(self.cache_file_path, 'r')
+                previous_data = json.load(rfile)
+                rfile.close()
+                new_data = dict(new_data) | previous_data
+    
+        wfile = open(self.cache_file_path, 'w')
+        print('Downloading meta json file')
+        json.dump(new_data, wfile)
+        wfile.close()
+
+    def jpx_str_strip(self, text : str)->str:
+    
+        MODE = 'NFKC'
+        normalized = ud.normalize(MODE, text)
+        unspaced = normalized.replace(' ', '').replace('\t', '').replace('　', '')
+        return unspaced.replace('株式会社', '').replace('合同会社', '').replace('有限会社', '')
+
+    def jpx_and_edinet_ticker_match(self)->list:
+        import os
+    
+        df = pd.read_excel('data_j.xls')
+        filtered_index = list(map(lambda x : '株式' in x, df['市場・商品区分']))
+        filtered =  df[filtered_index]
+        jpx_ticker = list(map(lambda x: self.jpx_str_strip(x), filtered['銘柄名'].to_list()))
+        
+        cache = pd.read_json('/home/yosuke/.cache/yaxbrl/edinet_cache.json')
+        cached = list(map(lambda x: (self.jpx_str_strip(x), x), cache.keys()))
+        
+        #print('data_j.xls', len(filtered.index))
+        #print('stripped', len(stripped))
+        #print('tickers', len(tickers))
+
+        return list(filter(lambda x: x[0] in jpx_ticker, cached))
