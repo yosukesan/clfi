@@ -12,6 +12,10 @@ python3 edinet_tools.py --update
 
 2. Get all XBRL data from Edinet server. Data is stored at ./XBRL
 
+Need to download excel spread sheet here and place the project root dir.
+https://www.jpx.co.jp/markets/statistics-equities/misc/01.html
+
+The run.
 ```
 python3 edinet_tools.py --all
 ```
