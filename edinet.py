@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
 from datetime import datetime
 
 import json
@@ -8,14 +7,10 @@ import os
 import requests
 import pandas as pd
 import time
-import unicodedata as ud
+
+from edinet_utils import deep_union
 
 DELAY = 3
-
-class Types:
-
-    def rdict(self):
-        return defaultdict(self.rdict)
 
 class EdinetTool:
 
@@ -144,8 +139,7 @@ class EdinetTool:
 
         ses = requests.Session()
 
-        types = Types()
-        hashmap = types.rdict()
+        hashmap = {}
 
         for d in pd.date_range(start=end, end=start): 
 
@@ -159,12 +153,18 @@ class EdinetTool:
 
             for i in json_data["results"]:
 
-                if not i["docTypeCode"] in self._doc_type_codes.keys():
+                if i["docTypeCode"] not in self._doc_type_codes.keys():
                     continue
 
                 doc_type = self._doc_type_codes[i["docTypeCode"]]
-                key = i["filerName"]
-                hashmap[key][d.strftime('%Y-%m-%d')][doc_type] = i
+
+                if i["filerName"] not in hashmap.keys():
+                    hashmap[i["filerName"]] = {}
+
+                if d.strftime('%Y-%m-%d') not in hashmap[i["filerName"]]:
+                    hashmap[i["filerName"]][d.strftime('%Y-%m-%d')] = {}
+
+                hashmap[i["filerName"]][d.strftime('%Y-%m-%d')][doc_type] = i
 
             time.sleep(DELAY)
 
@@ -194,8 +194,6 @@ class EdinetTool:
                         .format(self.base_url, doc_id)
                     resp = ses.get(url)
                     resp.encoding = resp.apparent_encoding
-                    #json_data = json.loads(resp.text)
-                    #xbrl_data = urllib.request.urlopen(url)
 
                     time.sleep(DELAY)
 
@@ -303,7 +301,7 @@ class EdinetTool:
     def yaxbrl_update(self, start, end):
     
         new_data = self.metadata_get(start, end)
-        previous_data = None
+        previous_data = {}
     
         if not os.path.isdir(self.cache_dir_path):
             print('making local cache dir : ', self.cache_dir_path)
@@ -311,17 +309,17 @@ class EdinetTool:
         else:
             if os.path.isfile(self.cache_file_path):
                 print('reading local cache file : ', self.cache_file_path)
-                rfile = open(self.cache_file_path, 'r')
-                previous_data = json.load(rfile)
-                rfile.close()
-                new_data = dict(new_data) | previous_data
-    
-        wfile = open(self.cache_file_path, 'w')
+                BUFFERED = new_data.keys()
+                with open(self.cache_file_path) as rfile:
+                    previous_data = json.load(rfile)
+                new_data = deep_union(new_data, previous_data)
+
         print('Downloading meta json file')
-        json.dump(new_data, wfile)
-        wfile.close()
+        with open(self.cache_file_path, 'w') as wfile:
+            json.dump(new_data, wfile)
 
     def jpx_str_strip(self, text : str)->str:
+        import unicodedata as ud
     
         MODE = 'NFKC'
         normalized = ud.normalize(MODE, text)
