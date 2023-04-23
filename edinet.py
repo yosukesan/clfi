@@ -197,7 +197,7 @@ class EdinetTool:
 
                     time.sleep(DELAY)
 
-                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
+                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, r'{0}'.format(hashed['filerName']), r'{0}'.format(hashed['docDescription']))
                     os.makedirs(pwd, exist_ok=True)
 
                     target_path = os.path.join(pwd, hashed['docID']+".zip")
@@ -209,6 +209,7 @@ class EdinetTool:
         ses.close()
 
     def xbrl_get_by_query(self, xbrl_dir_root, hashmap, targets, is_exclude_fund):
+        import unicodedata
 
         ses = requests.Session()
 
@@ -240,7 +241,8 @@ class EdinetTool:
 
                     time.sleep(DELAY)
 
-                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'])
+                    pwd = unicodedata.normalize('NFKC', os.path.join(os.getcwd(), xbrl_dir_root, hashed['filerName'], hashed['docDescription'].replace('/', '')))
+                    pwd = pwd.replace('(', '').replace(')', '')
                     os.makedirs(pwd, exist_ok=True)
 
                     target_path = os.path.join(pwd, hashed['docID']+".zip")
