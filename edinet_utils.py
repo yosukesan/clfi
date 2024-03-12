@@ -1,9 +1,13 @@
 
 def deep_union(a, b):
+    import sys
+
     if not isinstance(a, dict):
-        TypeError("a is not dict") 
+        #print(TypeError('Error: {0} is not dict'.format(a)))
+        return
     if not isinstance(b, dict):
-        TypeError("b is not dict") 
+        #print(TypeError('Error: {0} is not dict'.format(b)))
+        return
 
     if a == b:
         return a
