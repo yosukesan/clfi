@@ -3,10 +3,8 @@ def deep_union(a, b):
     import sys
 
     if not isinstance(a, dict):
-        #print(TypeError('Error: {0} is not dict'.format(a)))
         return
     if not isinstance(b, dict):
-        #print(TypeError('Error: {0} is not dict'.format(b)))
         return
 
     if a == b:

@@ -36,27 +36,21 @@ if __name__=="__main__":
 
     start = datetime(sYYYY, sMM, sDD).date()
     end = datetime(eYYYY, eMM, eDD).date()
-    #start: datetime = datetime(2021,11,12)
-    #end: datetime = datetime(2021,11,12)
 
     print('query range: from {0} to {1}'.format(start, end))
 
     if args.update:
         print("fetching Edinet server")
         edinet.yaxbrl_update(end, start)
-        sys.exit(0)
 
-    if args.target:
+    elif args.target:
         print("downloading target xbrl files")
 
         # only support single frim for this option
         edinet.yaxbrl_query_get(end, start, firm=args.target[0], is_exclude_fund=True)
-        sys.exit(0)
 
-    if args.all:
+    elif args.all:
         print("downloading all xbrl files")
 
         targets = edinet.jpx_and_edinet_ticker_match()
         edinet.yaxbrl_query_get(end, start, targets, is_exclude_fund=True)
-
-        sys.exit(0)

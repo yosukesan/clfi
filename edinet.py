@@ -4,6 +4,7 @@ from datetime import datetime
 
 import json
 import os
+import sys
 import requests
 import pandas as pd
 import time
@@ -85,6 +86,7 @@ class EdinetTool:
 
         xbrl_file_path = None
 
+        print(target_path)
         with zipfile.ZipFile(target_path) as data_zip:
             target_file = list(filter(lambda x: x[-4:]=="xbrl", data_zip.namelist()))
             xbrl_file_path = list(filter(lambda x: "PublicDoc" in x, target_file))
@@ -148,6 +150,10 @@ class EdinetTool:
             url = self.base_url + "/documents.json?" + url_date +"&type=2"
 
             resp = ses.get(url)
+            if resp.status_code != requests.codes.ok: 
+                sys.stderr.write('{0}: at metadata_get'.format(str(ConnectionError)))    
+                sys.exit(2)
+
             resp.encoding = resp.apparent_encoding
             json_data = json.loads(resp.text)
 
@@ -207,6 +213,7 @@ class EdinetTool:
                     print('{0},{1},{2},{3},{4},{5}'.format(firms, doc_types, dates,doc_id, xbrl_file_path, target_path))
 
         ses.close()
+        return 
 
     def xbrl_get_by_query(self, xbrl_dir_root, hashmap, targets, is_exclude_fund):
         import unicodedata
@@ -236,8 +243,12 @@ class EdinetTool:
                     url = '{0}/documents/{1}?type=1'\
                         .format(self.base_url, doc_id)
                     resp = ses.get(url)
+
+                    if resp.status_code != requests.codes.ok:
+                        sys.stderr.write('{0} at xbrl_get_by_query'.format(ConnectionError))
+                        sys.exit(1)
+
                     resp.encoding = resp.apparent_encoding
-                    #xbrl_data = urllib.request.urlopen(url)
 
                     time.sleep(DELAY)
 

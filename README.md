@@ -26,3 +26,8 @@ python3 edinet_tools.py --all
 ```
 python3 edinet_tools.py --target トヨタ自動車株式会社
 ```
+
+# Advanced
+
+Download CSV file called Edinet コードリスト. It's should be at the bottom of the page.
+https://disclosure2.edinet-fsa.go.jp/weee0010.aspx
