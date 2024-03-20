@@ -20,7 +20,7 @@ def read_xbrls(d: dict, firm: str) -> dict:
     d[firm] = {}
 
     df = pd.read_csv(firm, names=('firm', 'date', 'filename', 'xbrl_path','path'), skiprows=3)
-    df = df[df['path']!='None']
+    #df = df[df['path']!='None']
     df = df.sort_values('date')
 
     for p in df['path']:
@@ -50,7 +50,9 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
 #
 #    wrapper for chart plot
 #
+    import matplotlib.pyplot as plt
 
+    plt.rcParams['font.family'] = 'IPAMincho'
     fig, ax = plt.subplots()
     fig.set_figheight(9)
     fig.set_figwidth(16)
@@ -81,7 +83,6 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
     plt.clf()
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
     from collections import OrderedDict
 
     xbrl_app : XbrlApp = XbrlApp()
@@ -112,6 +113,6 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(res, index=time_stamp)
     df['sales %'] = df['sales'].pct_change()
-    print(df)
+    #print(df)
 
     chart_plot('sales', firm, df)

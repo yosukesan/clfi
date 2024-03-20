@@ -86,7 +86,6 @@ class EdinetTool:
 
         xbrl_file_path = None
 
-        print(target_path)
         with zipfile.ZipFile(target_path) as data_zip:
             target_file = list(filter(lambda x: x[-4:]=="xbrl", data_zip.namelist()))
             xbrl_file_path = list(filter(lambda x: "PublicDoc" in x, target_file))
