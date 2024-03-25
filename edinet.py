@@ -139,14 +139,12 @@ class EdinetTool:
     #" download document.json file from Edinet "
 
         ses = requests.Session()
-
         hashmap = {}
 
         for d in pd.date_range(start=end, end=start): 
 
-            url_date="date=" + d.strftime('%Y-%m-%d')
-            print(url_date)
-            url = self.base_url + "/documents.json?" + url_date +"&type=2"
+            url = '{0}/documents.json?date={1}&type=2'.format(self.base_url, d.strftime('%Y-%m-%d'))
+            print(url)
 
             resp = ses.get(url)
             if resp.status_code != requests.codes.ok: 
@@ -166,13 +164,14 @@ class EdinetTool:
 
                 doc_type = self._doc_type_codes[i["docTypeCode"]]
 
-                if i["filerName"] not in hashmap.keys():
-                    hashmap[i["filerName"]] = {}
+                if i["edinetCode"] not in hashmap.keys():
+                    hashmap[i["edinetCode"]] = {}
 
-                if d.strftime('%Y-%m-%d') not in hashmap[i["filerName"]]:
-                    hashmap[i["filerName"]][d.strftime('%Y-%m-%d')] = {}
+                submitted_date = datetime.strptime(i['submitDateTime'], '%Y-%m-%d %H:%M')
+                if submitted_date.strftime('%Y-%m-%d') not in hashmap[i["edinetCode"]]:
+                    hashmap[i["edinetCode"]][submitted_date.strftime('%Y-%m-%d')] = {}
 
-                hashmap[i["filerName"]][d.strftime('%Y-%m-%d')][doc_type] = i
+                hashmap[i["edinetCode"]][submitted_date.strftime('%Y-%m-%d')][doc_type] = i
 
             time.sleep(DELAY)
 

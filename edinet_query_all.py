@@ -14,13 +14,16 @@ if __name__ == "__main__":
     df = pd.read_csv(filename, skiprows=1, index_col='ＥＤＩＮＥＴコード')
 
     df = df[df['上場区分'] == '上場']
-    for i in df['提出者名']:
-        with open('{0}.csv'.format(i), 'w') as redirect_file:
+
+    #for i in df['提出者名']:
+    for i in df.index:
+        print('{0}'.format(df['提出者名'][i]))
+        with open('{0}.csv'.format(df['提出者名'][i]), 'w') as redirect_file:
             subprocess.run(args=['python3',
                 'edinet_tools.py',
                 '--target={0}'.format(i),
                 '--start={0}'.format(start),
                 '--end={0}'.format(end)],
                 stdout=redirect_file)
-            subprocess.run(args=['python3', 'analyse.py', '{0}.csv'.format(i)])
-        print('{0}\n------------'.format(i))
+            subprocess.run(args=['python3', 'analyse.py', '{0}.csv'.format(df['提出者名'][i])])
+        print('-----------------------')
