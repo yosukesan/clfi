@@ -158,6 +158,9 @@ class EdinetTool:
 
             for i in json_data["results"]:
 
+                if i['seqNumber'] == None:
+                    continue
+
                 if i["docTypeCode"] not in self._doc_type_codes.keys():
                     continue
 
