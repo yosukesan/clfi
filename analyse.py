@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
         # Profit Loss
         sales_container[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['sales'])
-        cost_of_sales[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['cost_of_sales'])
+        cost_of_sales[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['COGS'])
         gross_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['gross_profit'])
         GA_expenses[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['GA_expenses'])
         operating_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['operating_profit'])
@@ -135,7 +135,7 @@ if __name__ == '__main__':
         time_stamp[ts] = ts 
 
     res['sales'] = sales_container 
-    res['cost_of_sales'] = cost_of_sales
+    res['COGS'] = cost_of_sales
     res['gross_profit'] = gross_profit
     res['GA_expenses'] = GA_expenses
     res['operating_profit'] = operating_profit
