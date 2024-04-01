@@ -39,6 +39,14 @@ class EdinetTool:
         self._base_url = url
 
     @property
+    def edinet_key(self):
+        return self._edinet_key
+
+    @edinet_key.setter
+    def edinet_key(self, key):
+        self._edinet_key = key
+
+    @property
     def cache_dir_path(self):
         return self._cache_dir_path
 
@@ -143,8 +151,7 @@ class EdinetTool:
 
         for d in pd.date_range(start=end, end=start): 
 
-            url = '{0}/documents.json?date={1}&type=2'.format(self.base_url, d.strftime('%Y-%m-%d'))
-            print(url)
+            url = '{0}/documents.json?date={1}&type=2&Subscription-Key={2}'.format(self.base_url, d.strftime('%Y-%m-%d'), edinet_key)
 
             resp = ses.get(url)
             if resp.status_code != requests.codes.ok: 
@@ -197,8 +204,8 @@ class EdinetTool:
 
                     doc_id = hashed['docID']
 
-                    url = '{0}/documents/{1}?type=1'\
-                        .format(self.base_url, doc_id)
+                    url = '{0}/documents/{1}?type=1&Subscription-Key={2}'\
+                        .format(self.base_url, doc_id, self.edinet_key)
                     resp = ses.get(url)
                     resp.encoding = resp.apparent_encoding
 
@@ -241,8 +248,8 @@ class EdinetTool:
 
                     doc_id = hashed['docID']
 
-                    url = '{0}/documents/{1}?type=1'\
-                        .format(self.base_url, doc_id)
+                    url = '{0}/documents/{1}?type=1&Subscription-Key={2}'\
+                        .format(self.base_url, doc_id, self.edinet_key)
                     resp = ses.get(url)
 
                     if resp.status_code != requests.codes.ok:
