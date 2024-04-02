@@ -79,11 +79,12 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
     plt.title(firm)
     plt.subplots_adjust(bottom=0.2)
     #plt.show()
-    plt.savefig('{0}.png'.format(firm[:-4]), dpi=300)
+    plt.savefig('{0}-{1}.png'.format(firm[:-4], target), dpi=200)
     plt.clf()
 
 if __name__ == '__main__':
     from collections import OrderedDict
+    from model import APModel
 
     xbrl_app : XbrlApp = XbrlApp()
     d : dict = {} 
@@ -145,6 +146,18 @@ if __name__ == '__main__':
     #df['sales %'] = df['sales'].pct_change()
     #df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
 
+    ap_model = APModel()
+    params = {'forward_year': 7,
+            'min_growth_rate': 0.02,
+            'growth_penalty': 0.01,
+            'is_cost': False}
+
+    df = ap_model.load(df, params)
+
     print(df)
 
     chart_plot('sales', firm, df)
+    chart_plot('COGS', firm, df)
+    chart_plot('GA_expenses', firm, df)
+    chart_plot('operating_profit', firm, df)
+    chart_plot('profit_loss', firm, df)
