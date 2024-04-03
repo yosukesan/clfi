@@ -15,7 +15,6 @@ if __name__ == "__main__":
 
     df = df[df['上場区分'] == '上場']
 
-    #for i in df['提出者名']:
     for i in df.index:
         print('{0}'.format(df['提出者名'][i]))
         with open('{0}.csv'.format(df['提出者名'][i]), 'w') as redirect_file:

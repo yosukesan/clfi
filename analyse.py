@@ -2,54 +2,64 @@ import sys, re
 import pandas as pd
 from zipfile import ZipFile
 from ya_python_xbrl import XbrlApp
-import pprint
+
 
 def read_zip_file(file_path):
     file_list = []
+
     with ZipFile(file_path, 'r') as f:
+        if f.testzip() == ValueError:
+            sys.stderr('Error: {0} could not be read. Broken zip file'.format(file_path))
+
         file_list = f.namelist()
-        target = list(filter(lambda x:  '.xbrl' in x and 'PublicDoc' in x, file_list))    
-        print(*target)
+        target = list(filter(lambda x:  '.xbrl' in x and 'PublicDoc' in x, file_list))
         fp = f.open(*target, 'r')
+
         return *target, fp.read().decode('UTF-8')
 
+
 def read_xbrls(d: dict, firm: str) -> dict:
-#
-#    batch read XBRL files issued by the specified firm
-#
+    """
+    batch read XBRL files issued by the specified firm
+    """
+
     d[firm] = {}
 
-    df = pd.read_csv(firm, names=('firm', 'date', 'filename', 'xbrl_path','path'), skiprows=3)
-    #df = df[df['path']!='None']
+    df = pd.read_csv(firm, names=('firm', 'date', 'filename', 'xbrl_path', 'path'), skiprows=3)
     df = df.sort_values('date')
 
     for p in df['path']:
+        print(p)
         xbrl_file_path, text = read_zip_file(p)
+        print(xbrl_file_path)
         splitted = xbrl_file_path.split('_')
 
         period = splitted[0].split('-')[1][:-1]
         start = splitted[2]
         end = splitted[4][:-5]
 
-        xbrl_app : XbrlApp = XbrlApp()
+        xbrl_app: XbrlApp = XbrlApp()
         xbrl_app.parse(text)
         data = xbrl_app.data()
         d[firm]['{0}_{1}_{2}'.format(start, end, period)] = data
 
     return d
 
+
 def parse_file_time_stamp(file_time_stamp):
-#
-#    return term end year and financial quarter as string
-#
+    """
+    return term end year and financial quarter as string
+    """
+
     year = re.search('([0-9]{4}).*?([0-9]{4})', file_time_stamp)
     term = file_time_stamp.split('_')[-1:]
     return '{0}-{1}'.format(year.group(1), *term)
 
+
 def chart_plot(target: str, firm: str, df: pd.DataFrame):
-#
-#    wrapper for chart plot
-#
+    """
+    wrapper for chart plot
+    """
     import matplotlib.pyplot as plt
 
     plt.rcParams['font.family'] = 'IPAMincho'
@@ -78,16 +88,17 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
 
     plt.title(firm)
     plt.subplots_adjust(bottom=0.2)
-    #plt.show()
+    # plt.show()
     plt.savefig('{0}-{1}.png'.format(firm[:-4], target), dpi=200)
     plt.clf()
+
 
 if __name__ == '__main__':
     from collections import OrderedDict
     from model import APModel
 
-    xbrl_app : XbrlApp = XbrlApp()
-    d : dict = {} 
+    xbrl_app: XbrlApp = XbrlApp()
+    d: dict = {}
     firm = sys.argv[1]
     d = read_xbrls(d, firm)
 
@@ -125,17 +136,17 @@ if __name__ == '__main__':
         gross_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['gross_profit'])
         GA_expenses[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['GA_expenses'])
         operating_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['operating_profit'])
-        #ebita[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['EBITA'])
+        # ebita[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['EBITA'])
         profit_loss[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['profit_loss'])
 
         # Balance sheet
-        #PPE[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['PPE'])
-        #depriciation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['depriciation'])
-        #amortisation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['amortisation'])
-        
-        time_stamp[ts] = ts 
+        # PPE[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['PPE'])
+        # depriciation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['depriciation'])
+        # amortisation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['amortisation'])
 
-    res['sales'] = sales_container 
+        time_stamp[ts] = ts
+
+    res['sales'] = sales_container
     res['COGS'] = cost_of_sales
     res['gross_profit'] = gross_profit
     res['GA_expenses'] = GA_expenses
@@ -143,8 +154,8 @@ if __name__ == '__main__':
     res['profit_loss'] = profit_loss
 
     df = pd.DataFrame(res, index=time_stamp)
-    #df['sales %'] = df['sales'].pct_change()
-    #df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
+    # df['sales %'] = df['sales'].pct_change()
+    # df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
 
     ap_model = APModel()
     params = {'forward_year': 7,
@@ -159,5 +170,6 @@ if __name__ == '__main__':
     chart_plot('sales', firm, df)
     chart_plot('COGS', firm, df)
     chart_plot('GA_expenses', firm, df)
+    chart_plot('gross_profit', firm, df)
     chart_plot('operating_profit', firm, df)
     chart_plot('profit_loss', firm, df)

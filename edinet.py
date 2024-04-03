@@ -1,32 +1,28 @@
 #!/usr/bin/env python3
 
+import json, os, requests, sys, time
+
 from datetime import datetime
-
-import json
-import os
-import sys
-import requests
-import pandas as pd
-import time
-
 from edinet_utils import deep_union
+import pandas as pd
 
 DELAY = 3
 
 class EdinetTool:
 
     def __init__(self):
-        self._doc_type_codes = {"010": "有価証券通知書",
-                                "020": "変更通知書(有価証券通知書)",
-                                "030": "有価証券届出書",
-                                "040": "訂正有価証券届出書",
-                                "050": "届出の取り下げ願い",
-                                "120": "有価証券報告書",
-                                "130": "訂正有価証券報告書",
-                                "140": "四半期報告書",
-                                "150": "訂正四半期報告書",
-                                "170": "訂正半期報告書",
-                                "360" : "大量保有報告書"}
+        self._doc_type_codes = {
+            "010": "有価証券通知書",
+            "020": "変更通知書(有価証券通知書)",
+            "030": "有価証券届出書",
+            "040": "訂正有価証券届出書",
+            "050": "届出の取り下げ願い",
+            "120": "有価証券報告書",
+            "130": "訂正有価証券報告書",
+            "140": "四半期報告書",
+            "150": "訂正四半期報告書",
+            "170": "訂正半期報告書",
+            "360": "大量保有報告書"}
         self.error_code = ["Cache file doesn't exit. Run `python edinet_tool --update`",\
                            "Cache file dir doesn't exit. Run `python edinet_tool --update`"]
 
@@ -120,38 +116,18 @@ class EdinetTool:
 
         return xbrl_file_path
 
-    def unzip_all(self, zip_file_path, xbrl_files):
-        import zipfile
-
-        if len(xbrl_files) == 0:
-            return
-
-        with zipfile.ZipFile(zip_file_path) as data_zip:
-            print('{0}:'.format(zip_file_path))
-            for xbrl_file in xbrl_files:
-                print('\tdeflating {0}'.format(xbrl_file))
-                data_zip.extract(member=xbrl_file)
-
-        print('')
-
-    def is_fund(self, data):
-        if not data:
-            return False
-
-        if data[0] == 'G':
-            return True
-
-        return False
 
     def metadata_get(self, start, end)->dict:
-    #" download document.json file from Edinet "
+        """
+        download document.json file from Edinet
+        """
 
         ses = requests.Session()
         hashmap = {}
 
         for d in pd.date_range(start=end, end=start): 
 
-            url = '{0}/documents.json?date={1}&type=2&Subscription-Key={2}'.format(self.base_url, d.strftime('%Y-%m-%d'), edinet_key)
+            url = '{0}/documents.json?date={1}&type=2&Subscription-Key={2}'.format(self.base_url, d.strftime('%Y-%m-%d'), self.edinet_key)
 
             resp = ses.get(url)
             if resp.status_code != requests.codes.ok: 
@@ -182,46 +158,12 @@ class EdinetTool:
 
             time.sleep(DELAY)
 
+            print(d.date())
+
         ses.close()
 
         return hashmap
 
-    def xbrl_get2(self, xbrl_dir_root, hashmap, is_exclude_fund):
-
-        ses = requests.Session()
-
-        for firms in hashmap.keys():
-            for dates in hashmap[firms]:
-                for doc_types in hashmap[firms][dates]:
-
-                    hashed = hashmap[firms][dates][doc_types]
-
-                    if is_exclude_fund == True and self.is_fund(hashed['fundCode']):
-                        continue
-
-                    if hashed['xbrlFlag'] == '0':
-                        continue
-
-                    doc_id = hashed['docID']
-
-                    url = '{0}/documents/{1}?type=1&Subscription-Key={2}'\
-                        .format(self.base_url, doc_id, self.edinet_key)
-                    resp = ses.get(url)
-                    resp.encoding = resp.apparent_encoding
-
-                    time.sleep(DELAY)
-
-                    pwd = os.path.join(os.getcwd(), xbrl_dir_root, r'{0}'.format(hashed['filerName']), r'{0}'.format(hashed['docDescription']))
-                    os.makedirs(pwd, exist_ok=True)
-
-                    target_path = os.path.join(pwd, hashed['docID']+".zip")
-                    open(target_path, "wb").write(resp.text)
-                    xbrl_file_path = self._unzip(target_path)
-
-                    print('{0},{1},{2},{3},{4},{5}'.format(firms, doc_types, dates,doc_id, xbrl_file_path, target_path))
-
-        ses.close()
-        return 
 
     def xbrl_get_by_query(self, xbrl_dir_root, hashmap, targets, is_exclude_fund):
         import unicodedata
@@ -284,22 +226,7 @@ class EdinetTool:
 
         return new_hash
 
-    def batch_download(self, excel_file) -> dict:
-        
-        df = pd.read_excel(excel_file)
-        df = df[df['市場・商品区分'] != 'ETF・ETN']
-        df = df[['コード', '銘柄名', '33業種コード', '33業種区分', '17業種コード', '17業種区分', '規模コード', '規模区分']]
 
-        return df
-
-    def yaxbrl_get(self, start, end, is_exclude_fund):
-    
-        if not os.path.isdir(self.xbrl_dir_root):
-            os.makedirs(self.xbrl_dir_root, exist_ok=True)
-    
-        cache_data = self.yaxbrl_read_cache_data(self.cache_file_path)
-        self.xbrl_get2(self.xbrl_dir_root, cache_data, is_exclude_fund)
-    
     def yaxbrl_query_get(self, start, end, firm, is_exclude_fund):
     
         cache_data = self.yaxbrl_read_cache_data(self.cache_file_path)
@@ -338,28 +265,3 @@ class EdinetTool:
         print('Downloading meta json file')
         with open(self.cache_file_path, 'w') as wfile:
             json.dump(new_data, wfile)
-
-    def jpx_str_strip(self, text : str)->str:
-        import unicodedata as ud
-    
-        MODE = 'NFKC'
-        normalized = ud.normalize(MODE, text)
-        unspaced = normalized.replace(' ', '').replace('\t', '').replace('　', '')
-        return unspaced.replace('株式会社', '').replace('合同会社', '').replace('有限会社', '')
-
-    def jpx_and_edinet_ticker_match(self)->list:
-        import os
-    
-        df = pd.read_excel('data_j.xls')
-        filtered_index = list(map(lambda x : '株式' in x, df['市場・商品区分']))
-        filtered =  df[filtered_index]
-        jpx_ticker = list(map(lambda x: self.jpx_str_strip(x), filtered['銘柄名'].to_list()))
-        
-        cache = pd.read_json('/home/yosuke/.cache/yaxbrl/edinet_cache.json')
-        cached = list(map(lambda x: (self.jpx_str_strip(x), x), cache.keys()))
-        
-        #print('data_j.xls', len(filtered.index))
-        #print('stripped', len(stripped))
-        #print('tickers', len(tickers))
-
-        return list(filter(lambda x: x[0] in jpx_ticker, cached))

@@ -1,10 +1,13 @@
+from collections import OrderedDict
+import pandas as pd
+
 
 class APModel:
 
     def __init__(self):
         pass
 
-    def generate_year(self, year, quarter, forward_year):
+    def generate_year(self, year, quarter, forward_year) -> list:
         """
         Estimate
         """
@@ -17,7 +20,7 @@ class APModel:
 
         indecies = []
         y = year
-    
+
         for i in range(0, forward_year * len(quarters)):
             q = quarters[(qp+1) % len(quarters)]
             y += yq[(qp+1) % len(quarters)]
@@ -26,8 +29,10 @@ class APModel:
 
         return indecies
 
-    def projection(self, pseries, forward_year, params):
-        from collections import OrderedDict
+    def projection(self, pseries, forward_year, params) -> OrderedDict:
+        """
+        Extrapolate series
+        """
 
         penalty = params['growth_penalty']
         min_growth_rate = params['min_growth_rate']
@@ -50,14 +55,13 @@ class APModel:
                 else:
                     ave_change -= penalty
                 ave_change = max(ave_change, min_growth_rate)
-                interval += interval
+                interval += interval*2
 
-            d[forward_year[i]] = d[forward_year[i-4]] * ave_change 
+            d[forward_year[i]] = d[forward_year[i-4]] * ave_change
 
         return d
 
-    def prediction(self, df, params):
-        import pandas as pd
+    def prediction(self, df, params) -> pd.DataFrame:
         import sys
         import copy
 
@@ -65,7 +69,7 @@ class APModel:
         quarter = df.index[-1].split('-')[1]
 
         org_data = {}
-        org_data['column'] = df.columns    
+        org_data['column'] = df.columns
         org_data['index'] = df.index
         forward_year = params['forward_year']
 
@@ -74,13 +78,14 @@ class APModel:
         cost_params = copy.copy(params)
         cost_params['is_cost'] = True
 
-        estimated_df = pd.DataFrame({'sales': self.projection(df['sales'], indecies, params),
-                            'COGS': self.projection(df['COGS'], indecies, cost_params),
-                            'gross_profit': self.projection(df['gross_profit'], indecies, params),
-                            'GA_expenses': self.projection(df['GA_expenses'], indecies, cost_params),
-                            'operating_profit': self.projection(df['operating_profit'], indecies, params),
-                            'profit_loss': self.projection(df['profit_loss'], indecies, params)},
-                            index=indecies)
+        estimated_df = pd.DataFrame(
+            {'sales': self.projection(df['sales'], indecies, params),
+            'COGS': self.projection(df['COGS'], indecies, cost_params),
+            'gross_profit': self.projection(df['gross_profit'], indecies, params),
+            'GA_expenses': self.projection(df['GA_expenses'], indecies, cost_params),
+            'operating_profit': self.projection(df['operating_profit'], indecies, params),
+            'profit_loss': self.projection(df['profit_loss'], indecies, params)},
+            index=indecies)
 
         # overwrite profits
         estimated_df['gross_profit'] = estimated_df['sales'] - estimated_df['COGS']

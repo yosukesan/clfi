@@ -27,6 +27,7 @@ if __name__=="__main__":
     edinet.cache_file_path = os.path.join(edinet.cache_dir_path, 'edinet_cache.json')
     edinet.base_url = "https://disclosure.edinet-fsa.go.jp/api/v2"
 
+    # parse dates
     sYYYY = int(args.start.split('-')[0])
     sMM = int(args.start.split('-')[1])
     sDD = int(args.start.split('-')[2])
@@ -41,7 +42,6 @@ if __name__=="__main__":
     edinet.edinet_key = getpass.getpass()
 
     print('query range: from {0} to {1}'.format(start, end))
-
     if args.update:
         print("fetching Edinet server")
         edinet.yaxbrl_update(end, start)
@@ -52,8 +52,8 @@ if __name__=="__main__":
         # only support single frim for this option
         edinet.yaxbrl_query_get(end, start, firm=args.target[0], is_exclude_fund=True)
 
-    elif args.all:
-        print("downloading all xbrl files")
-
-        targets = edinet.jpx_and_edinet_ticker_match()
-        edinet.yaxbrl_query_get(end, start, targets, is_exclude_fund=True)
+#    elif args.all:
+#        print("downloading all xbrl files")
+#
+#        targets = edinet.jpx_and_edinet_ticker_match()
+#        edinet.yaxbrl_query_get(end, start, targets, is_exclude_fund=True)
