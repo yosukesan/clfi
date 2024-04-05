@@ -1,0 +1,11 @@
+---
+forward_year: 7
+dcf:
+  growth:
+    enable_min_rate: false 
+    min_rate: 0.02
+    penalty_rate: 0.01
+  cost:
+    penalty_rate: 0.01
+  safety:
+    margins: [20, 35, 50]
