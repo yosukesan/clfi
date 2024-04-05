@@ -40,8 +40,7 @@ def read_xbrls(d: dict, firm: str) -> dict:
 
         xbrl_app: XbrlApp = XbrlApp()
         xbrl_app.parse(text)
-        data = xbrl_app.data()
-        d[firm]['{0}_{1}_{2}'.format(start, end, period)] = data
+        d[firm]['{0}_{1}_{2}'.format(start, end, period)] = xbrl_app.data()
 
     return d
 
@@ -86,16 +85,17 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame, params):
         ax2.text(i, y+y*0.05, '{:.2f}'.format(y), color='red', rotation=70, size=12)
         i += 1
 
-    plt.title('{0}: growth_penalty={1}'.format(firm, params['growth_penalty']))
+    plt.title('{0}: growth_penalty_rate={1}'.format(firm, params['dcf']['growth']['penalty_rate']))
     plt.subplots_adjust(bottom=0.2)
     # plt.show()
-    plt.savefig('{0}-{1}.png'.format(firm[:-4], target), dpi=200)
+    plt.savefig('{0}-{1}.svg'.format(firm[:-4], target))
     plt.clf()
 
 
 if __name__ == '__main__':
     from collections import OrderedDict
-    from models import AssetPricingModels
+    from model import AssetPricingModels
+    import yaml
 
     xbrl_app: XbrlApp = XbrlApp()
     xbrl_data: dict = {}
@@ -156,11 +156,9 @@ if __name__ == '__main__':
     # df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
 
     ap_model = AssetPricingModels()
-    params = {'forward_year': 7,
-            'enable_min_growth_rate': False,
-            'min_growth_rate': 0.02,
-            'growth_penalty': 0.02,
-            'is_cost': False}
+    params = {}
+    with open('clfi.yml', 'r') as params_file:
+        params = yaml.safe_load(params_file)
 
     df = ap_model.load(df, params)
 
@@ -171,4 +169,4 @@ if __name__ == '__main__':
     chart_plot('GA_expenses', firm, df, params)
     chart_plot('gross_profit', firm, df, params)
     chart_plot('operating_profit', firm, df, params)
-    chart_plot('profit_loss', firm, df, params)
+    #chart_plot('profit_loss', firm, df, params)

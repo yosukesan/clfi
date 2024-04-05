@@ -150,11 +150,12 @@ class EdinetTool:
                 if i["edinetCode"] not in hashmap.keys():
                     hashmap[i["edinetCode"]] = {}
 
-                submitted_date = datetime.strptime(i['submitDateTime'], '%Y-%m-%d %H:%M')
-                if submitted_date.strftime('%Y-%m-%d') not in hashmap[i["edinetCode"]]:
-                    hashmap[i["edinetCode"]][submitted_date.strftime('%Y-%m-%d')] = {}
+                period_end = datetime.strptime(i['periodEnd'], '%Y-%m-%d %H:%M')
+                period_end = period_end.strftime('%Y-%m-%d')
+                if period_end not in hashmap[i["edinetCode"]]:
+                    hashmap[i["edinetCode"]][period_end)] = {}
 
-                hashmap[i["edinetCode"]][submitted_date.strftime('%Y-%m-%d')][doc_type] = i
+                hashmap[i["edinetCode"]][period_end][doc_type] = i
 
             time.sleep(DELAY)
 
