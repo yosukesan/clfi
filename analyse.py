@@ -56,13 +56,13 @@ def parse_file_time_stamp(file_time_stamp):
     return '{0}-{1}'.format(year.group(1), *term)
 
 
-def chart_plot(target: str, firm: str, df: pd.DataFrame):
+def chart_plot(target: str, firm: str, df: pd.DataFrame, params):
     """
     wrapper for chart plot
     """
     import matplotlib.pyplot as plt
 
-    plt.rcParams['font.family'] = 'IPAMincho'
+    plt.rcParams['font.family'] = 'IPAGothic'
     fig, ax = plt.subplots()
     fig.set_figheight(9)
     fig.set_figwidth(16)
@@ -79,14 +79,14 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
 
     ax2 = ax.twinx()
     ax2.plot(df[target].pct_change(periods=4), 'o-', color='red')
-    ax2.set_ylabel('Yearly Change / %', color='red')
+    ax2.set_ylabel('Yearly Change', color='red')
 
     i = 0
     for x, y in zip(df.index, df[target].pct_change(periods=4)):
-        ax2.text(i, y+y*0.05, '{:.2f}'.format(y), color='red', rotation=0.7, size=12)
+        ax2.text(i, y+y*0.05, '{:.2f}'.format(y), color='red', rotation=70, size=12)
         i += 1
 
-    plt.title(firm)
+    plt.title('{0}: growth_penalty={1}'.format(firm, params['growth_penalty']))
     plt.subplots_adjust(bottom=0.2)
     # plt.show()
     plt.savefig('{0}-{1}.png'.format(firm[:-4], target), dpi=200)
@@ -95,12 +95,12 @@ def chart_plot(target: str, firm: str, df: pd.DataFrame):
 
 if __name__ == '__main__':
     from collections import OrderedDict
-    from model import APModel
+    from models import AssetPricingModels
 
     xbrl_app: XbrlApp = XbrlApp()
-    d: dict = {}
+    xbrl_data: dict = {}
     firm = sys.argv[1]
-    d = read_xbrls(d, firm)
+    xbrl_data = read_xbrls(xbrl_data, firm)
 
     # temporary dict storage for plot. In Xbrl file, time stamp is stored as string tags,
     # this need to be converted into numeral
@@ -112,7 +112,6 @@ if __name__ == '__main__':
     gross_profit = OrderedDict()
     GA_expenses = OrderedDict()
     operating_profit = OrderedDict()
-    ebita = OrderedDict()
     net_profit = OrderedDict()
     profit_loss = OrderedDict()
 
@@ -121,7 +120,7 @@ if __name__ == '__main__':
 
     time_stamp = OrderedDict()
 
-    for file_time_stamp in d[firm]:
+    for file_time_stamp in xbrl_data[firm]:
         print(file_time_stamp)
         if 'sr' in file_time_stamp:
             continue
@@ -131,13 +130,12 @@ if __name__ == '__main__':
         ts = parse_file_time_stamp(file_time_stamp)
 
         # Profit Loss
-        sales_container[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['sales'])
-        cost_of_sales[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['COGS'])
-        gross_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['gross_profit'])
-        GA_expenses[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['GA_expenses'])
-        operating_profit[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['operating_profit'])
-        # ebita[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['EBITA'])
-        profit_loss[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['profit_loss'])
+        sales_container[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['sales'])
+        cost_of_sales[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['COGS'])
+        gross_profit[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['gross_profit'])
+        GA_expenses[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['GA_expenses'])
+        operating_profit[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['operating_profit'])
+        profit_loss[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['profit_loss'])
 
         # Balance sheet
         # PPE[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['PPE'])
@@ -157,19 +155,20 @@ if __name__ == '__main__':
     # df['sales %'] = df['sales'].pct_change()
     # df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
 
-    ap_model = APModel()
+    ap_model = AssetPricingModels()
     params = {'forward_year': 7,
+            'enable_min_growth_rate': False,
             'min_growth_rate': 0.02,
-            'growth_penalty': 0.01,
+            'growth_penalty': 0.02,
             'is_cost': False}
 
     df = ap_model.load(df, params)
 
     print(df)
 
-    chart_plot('sales', firm, df)
-    chart_plot('COGS', firm, df)
-    chart_plot('GA_expenses', firm, df)
-    chart_plot('gross_profit', firm, df)
-    chart_plot('operating_profit', firm, df)
-    chart_plot('profit_loss', firm, df)
+    chart_plot('sales', firm, df, params)
+    chart_plot('COGS', firm, df, params)
+    chart_plot('GA_expenses', firm, df, params)
+    chart_plot('gross_profit', firm, df, params)
+    chart_plot('operating_profit', firm, df, params)
+    chart_plot('profit_loss', firm, df, params)
