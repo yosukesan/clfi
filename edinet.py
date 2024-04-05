@@ -153,7 +153,7 @@ class EdinetTool:
                 period_end = datetime.strptime(i['periodEnd'], '%Y-%m-%d %H:%M')
                 period_end = period_end.strftime('%Y-%m-%d')
                 if period_end not in hashmap[i["edinetCode"]]:
-                    hashmap[i["edinetCode"]][period_end)] = {}
+                    hashmap[i["edinetCode"]][period_end] = {}
 
                 hashmap[i["edinetCode"]][period_end][doc_type] = i
 
