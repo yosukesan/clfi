@@ -15,6 +15,7 @@ if __name__=="__main__":
     cmd_parser.add_argument('--all', nargs='?', const=True, help='download all avalible data')
     cmd_parser.add_argument('--target', metavar='${target_firm}', type=str, nargs=1, help='get target_firms data')
     cmd_parser.add_argument('--clean', nargs='?', const=True, help='clean local cache ~/.cache/yaxbrl/edinet_cache.json')
+    cmd_parser.add_argument('--api_key')
     cmd_parser.add_argument('--start')
     cmd_parser.add_argument('--end')
 
@@ -38,8 +39,12 @@ if __name__=="__main__":
     start = datetime(sYYYY, sMM, sDD).date()
     end = datetime(eYYYY, eMM, eDD).date()
 
-    # password
-    edinet.edinet_key = getpass.getpass()
+    # API KEY
+    # if api_key is given, its batch run mode
+    if not args.api_key:
+        edinet.edinet_key = getpass.getpass()
+    else:
+        edinet.edinet_key = args.api_key
 
     print('query range: from {0} to {1}'.format(start, end))
     if args.update:
