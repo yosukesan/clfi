@@ -100,27 +100,21 @@ if __name__ == '__main__':
     xbrl_app: XbrlApp = XbrlApp()
     xbrl_data: dict = {}
     firm = sys.argv[1]
+
+    # read XBRL data from zipped .xbrl file
     xbrl_data = read_xbrls(xbrl_data, firm)
 
-    # temporary dict storage for plot. In Xbrl file, time stamp is stored as string tags,
-    # this need to be converted into numeral
-    res = {}
-
-    # Profit Loss
-    sales_container = OrderedDict()
-    cost_of_sales = OrderedDict()
-    gross_profit = OrderedDict()
-    GA_expenses = OrderedDict()
-    operating_profit = OrderedDict()
-    net_profit = OrderedDict()
-    profit_loss = OrderedDict()
-    cashflow_from_operation = OrderedDict()
-    ppe = OrderedDict()
-
-    # Balance Sheet
-    PPE = OrderedDict()
+    accounting_titles = {}
+    accounting_titles['PL'] = ['sales', 'COGS', 'cost_of_sales', 'gross_profit', 'GA_expenses', 'operating_profit', 'profit_loss']
+    accounting_titles['BS'] = ['PPE']
+    accounting_titles['CF'] = ['cashflow_from_operation']
+    titles = accounting_titles['PL'] + accounting_titles['BS'] + accounting_titles['CF']
 
     time_stamp = OrderedDict()
+    res = {}
+
+    for k in titles:
+        res[k] = OrderedDict()
 
     for file_time_stamp in xbrl_data[firm]:
         print(file_time_stamp)
@@ -131,32 +125,9 @@ if __name__ == '__main__':
 
         ts = parse_file_time_stamp(file_time_stamp)
 
-        # Profit Loss
-        sales_container[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['sales'])
-        cost_of_sales[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['COGS'])
-        gross_profit[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['gross_profit'])
-        GA_expenses[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['GA_expenses'])
-        operating_profit[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['operating_profit'])
-        profit_loss[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['profit_loss'])
-
-        # Balance sheet
-        ppe[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['PPE'])
-        # depriciation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['depriciation'])
-        # amortisation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['amortisation'])
-
-        # cash_flow
-        cashflow_from_operation[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['cashflow_from_operation'])
-
-        time_stamp[ts] = ts
-
-    res['sales'] = sales_container
-    res['COGS'] = cost_of_sales
-    res['gross_profit'] = gross_profit
-    res['GA_expenses'] = GA_expenses
-    res['operating_profit'] = operating_profit
-    res['profit_loss'] = profit_loss
-    res['cashflow_from_operation'] = cashflow_from_operation
-    res['PPE'] = ppe
+        for k in titles:
+            res[k][ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp][k])
+            time_stamp[ts] = ts
 
     df = pd.DataFrame(res, index=time_stamp)
     df['FCF'] = df['cashflow_from_operation'] - df['PPE']
