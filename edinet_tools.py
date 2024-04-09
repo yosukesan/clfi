@@ -56,9 +56,3 @@ if __name__=="__main__":
 
         # only support single frim for this option
         edinet.yaxbrl_query_get(end, start, firm=args.target[0], is_exclude_fund=True)
-
-#    elif args.all:
-#        print("downloading all xbrl files")
-#
-#        targets = edinet.jpx_and_edinet_ticker_match()
-#        edinet.yaxbrl_query_get(end, start, targets, is_exclude_fund=True)
