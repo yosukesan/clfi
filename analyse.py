@@ -114,6 +114,8 @@ if __name__ == '__main__':
     operating_profit = OrderedDict()
     net_profit = OrderedDict()
     profit_loss = OrderedDict()
+    cashflow_from_operation = OrderedDict()
+    ppe = OrderedDict()
 
     # Balance Sheet
     PPE = OrderedDict()
@@ -138,9 +140,12 @@ if __name__ == '__main__':
         profit_loss[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['profit_loss'])
 
         # Balance sheet
-        # PPE[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['PPE'])
+        ppe[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['PPE'])
         # depriciation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['depriciation'])
         # amortisation[ts] = xbrl_app.current_year(d[firm][file_time_stamp]['amortisation'])
+
+        # cash_flow
+        cashflow_from_operation[ts] = xbrl_app.current_year(xbrl_data[firm][file_time_stamp]['cashflow_from_operation'])
 
         time_stamp[ts] = ts
 
@@ -150,10 +155,13 @@ if __name__ == '__main__':
     res['GA_expenses'] = GA_expenses
     res['operating_profit'] = operating_profit
     res['profit_loss'] = profit_loss
+    res['cashflow_from_operation'] = cashflow_from_operation
+    res['PPE'] = ppe
 
     df = pd.DataFrame(res, index=time_stamp)
-    # df['sales %'] = df['sales'].pct_change()
-    # df['cost_of_sales %'] = df['cost_of_sales'].pct_change()
+    df['FCF'] = df['cashflow_from_operation'] - df['PPE']
+
+    print(df)
 
     ap_model = AssetPricingModels()
     params = {}
@@ -162,11 +170,10 @@ if __name__ == '__main__':
 
     df = ap_model.load(df, params)
 
-    print(df)
-
     chart_plot('sales', firm, df, params)
     chart_plot('COGS', firm, df, params)
     chart_plot('GA_expenses', firm, df, params)
     chart_plot('gross_profit', firm, df, params)
     chart_plot('operating_profit', firm, df, params)
+    chart_plot('FCF', firm, df, params)
     #chart_plot('profit_loss', firm, df, params)
